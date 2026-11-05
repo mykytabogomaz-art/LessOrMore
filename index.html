@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Порівняй блоки</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Layout: one centred lesson column; two block towers sharing a "same level" band, sentence input underneath */
+:root {
+  --bg: #eef7f2;
+  --card: #ffffff;
+  --card-edge: #dfe8e4;
+  --ink: #23302c;
+  --muted: #6b7a75;
+  --block: #4a8ff2;
+  --block-top: #6aa6f7;
+  --block-shadow: #2f6fcf;
+  --band: rgba(110, 125, 140, 0.20);
+  --band-edge: rgba(110, 125, 140, 0.30);
+  --ok: #1f9a5c;
+  --ok-soft: #dff4e8;
+  --bad: #c9473a;
+  --bad-soft: #fbe5e1;
+  --focus: #4a8ff2;
+  --font-display: "Unbounded", "Nunito", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --block-h: 24px;
+  --gap: 6px;
+  --pad: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131a18; --card: #1d2624; --card-edge: #2c3835; --ink: #e8efec; --muted: #9aaaa5;
+    --block: #4f8fe8; --block-top: #6ba3ee; --block-shadow: #2d63b3;
+    --band: rgba(170, 185, 200, 0.16); --band-edge: rgba(170, 185, 200, 0.26);
+    --ok: #4cc98a; --ok-soft: #173a29; --bad: #ef7b6e; --bad-soft: #3d2220; --focus: #6ba3ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131a18; --card: #1d2624; --card-edge: #2c3835; --ink: #e8efec; --muted: #9aaaa5;
+  --block: #4f8fe8; --block-top: #6ba3ee; --block-shadow: #2d63b3;
+  --band: rgba(170, 185, 200, 0.16); --band-edge: rgba(170, 185, 200, 0.26);
+  --ok: #4cc98a; --ok-soft: #173a29; --bad: #ef7b6e; --bad-soft: #3d2220; --focus: #6ba3ee;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.45rem; margin: 0; text-wrap: balance; }
+.task { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.45; }
+
+.progress { display: flex; gap: 6px; width: 100%; }
+.dot { flex: 1; min-width: 0; height: 8px; border-radius: 4px; background: var(--card-edge); }
+.dot.now { background: var(--block); }
+.dot.ok { background: var(--ok); }
+.dot.miss { background: var(--bad); }
+.counter { font-weight: 800; color: var(--muted); font-size: .9rem; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+
+.stage { --col-gap: 28px; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card {
+  background: var(--card);
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  box-shadow: 0 1px 0 var(--card-edge), 0 6px 18px rgba(30, 60, 50, 0.06);
+  height: calc(8 * var(--block-h) + 7 * var(--gap) + 2 * var(--pad) + 4px);
+  padding: var(--pad);
+  display: flex; flex-direction: column-reverse; gap: var(--gap);
+}
+.block {
+  height: var(--block-h);
+  border-radius: 7px;
+  background: linear-gradient(var(--block-top), var(--block));
+  box-shadow: 0 3px 0 var(--block-shadow);
+  margin-inline: 6px;
+  flex: none;
+  animation: drop .28s ease-out both;
+}
+@keyframes drop { from { transform: translateY(-14px); opacity: .3; } to { transform: none; opacity: 1; } }
+.band {
+  position: absolute; left: 0; right: 0;
+  bottom: calc(var(--pad) - 7px);
+  background: var(--band);
+  border-top: 1px solid var(--band-edge);
+  border-bottom: 1px solid var(--band-edge);
+  border-radius: 0;
+  pointer-events: none;
+  transition: height .25s ease;
+}
+.band.bridge {
+  left: calc(50% - var(--col-gap) / 2); right: auto;
+  width: var(--col-gap);
+  bottom: calc(var(--side-label-h) + var(--pad) - 7px);
+}
+.side { text-align: center; font-weight: 800; color: var(--muted); font-size: .95rem; height: 22px; }
+
+.answer { display: flex; flex-direction: column; gap: 10px; }
+label.lbl { font-weight: 800; font-size: .95rem; }
+input#ans {
+  width: 100%;
+  font: 700 1.1rem var(--font-body);
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--card-edge);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+input#ans::placeholder { color: var(--muted); font-weight: 600; opacity: .8; }
+input#ans:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+input#ans.ok { border-color: var(--ok); background: var(--ok-soft); }
+input#ans.bad { border-color: var(--bad); background: var(--bad-soft); }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+button {
+  font: 800 1rem var(--font-body);
+  border-radius: 14px; padding: 12px 20px; cursor: pointer;
+  border: 2px solid var(--card-edge); background: var(--card); color: var(--ink);
+}
+button.primary { background: var(--block); border-color: var(--block); color: #fff; box-shadow: 0 3px 0 var(--block-shadow); }
+button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:active { transform: translateY(1px); }
+
+.msg { min-height: 1.4em; margin: 0; font-weight: 700; line-height: 1.4; }
+.msg.ok { color: var(--ok); }
+.msg.bad { color: var(--bad); }
+
+.final { background: var(--card); border-radius: 22px; padding: 28px 22px; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.final .big { font-family: var(--font-display); font-size: 2.6rem; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 420px) {
+  :root { --block-h: 21px; --gap: 5px; --pad: 14px; }
+  .stage { --col-gap: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .block { animation: none; }
+  .band { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="counter" id="counter">Питання 1 з 10</span>
+    <h1>Порівняй блоки</h1>
+    <p class="task">Порівняй блоки і напиши речення.</p>
+    <div class="progress" id="progress" aria-hidden="true"></div>
+  </header>
+
+  <section id="quiz" style="display:flex;flex-direction:column;gap:18px;">
+    <div class="stage" id="stage" style="--side-label-h: 32px;">
+      <div class="col"><div class="card" id="left"></div><div class="side">Зліва</div></div>
+      <div class="col"><div class="card" id="right"></div><div class="side">Справа</div></div>
+      <div class="band bridge"></div>
+    </div>
+
+    <form class="answer" id="form" autocomplete="off">
+      <label class="lbl" for="ans">Твоя відповідь</label>
+      <input id="ans" type="text" spellcheck="false" autocapitalize="sentences">
+      <div class="row">
+        <button type="submit" class="primary" id="check">Перевірити</button>
+        <button type="button" id="next" hidden>Далі →</button>
+      </div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="final" id="final" hidden>
+    <div class="counter">Готово!</div>
+    <div class="big" id="score">0 / 10</div>
+    <p class="task" id="scoreText"></p>
+    <button class="primary" id="again" type="button">Ще раз</button>
+  </section>
+</div>
+
+<script>
+(function () {
+  var QUESTIONS = [
+    [3, 1], [2, 5], [4, 3], [1, 4], [6, 2],
+    [3, 7], [5, 3], [2, 3], [7, 3], [4, 8]
+  ];
+  var WORDS = { 1: "один", 2: "два", 3: "три", 4: "чотири", 5: "п'ять", 6: "шість", 7: "сім", 8: "вісім" };
+
+  var i = 0, tries = 0, score = 0, results = [];
+  var $ = function (id) { return document.getElementById(id); };
+  var left = $("left"), right = $("right"), input = $("ans"),
+      msg = $("msg"), checkBtn = $("check"), nextBtn = $("next");
+
+  function expected(l, r) {
+    var d = Math.abs(l - r);
+    return l > r
+      ? "Зліва на " + d + " більше, а справа на " + d + " менше"
+      : "Зліва на " + d + " менше, а справа на " + d + " більше";
+  }
+
+  function normalize(s) {
+    return s.toLowerCase()
+      .replace(/[’ʼ`´]/g, "'")
+      .replace(/i/g, "і")          // латинська i → українська і
+      .replace(/[.,!?;:—–-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function numOk(token, d) {
+    return token === String(d) || token === WORDS[d];
+  }
+
+  function check(text, l, r) {
+    // велика літера на початку і крапка в кінці
+    var t = text.trim();
+    var first = t.charAt(0);
+    if (first !== first.toUpperCase() || first === first.toLowerCase()) return { ok: false, why: "capital" };
+    if (t.slice(-1) !== "." || t.slice(-2) === "..") return { ok: false, why: "dot" };
+    // починати можна з будь-якої сторони
+    var m = normalize(text).match(/^(зліва|справа) на (\S+) (більше|менше) (?:а )?(зліва|справа) на (\S+) (більше|менше)$/);
+    if (!m || m[1] === m[4]) return { ok: false, why: "format" };
+    var d = Math.abs(l - r);
+    var want = {
+      "зліва": l > r ? "більше" : "менше",
+      "справа": l > r ? "менше" : "більше"
+    };
+    if (!numOk(m[2], d) || !numOk(m[5], d)) return { ok: false, why: "number" };
+    if (m[3] !== want[m[1]] || m[6] !== want[m[4]]) return { ok: false, why: "word" };
+    return { ok: true };
+  }
+
+  function stack(el, n) {
+    el.innerHTML = "";
+    for (var k = 0; k < n; k++) {
+      var b = document.createElement("div");
+      b.className = "block";
+      b.style.animationDelay = (k * 40) + "ms";
+      el.appendChild(b);
+    }
+    var band = document.createElement("div");
+    band.className = "band";
+    el.appendChild(band);
+  }
+
+  function drawBand(m) {
+    var cs = getComputedStyle(document.documentElement);
+    var h = parseFloat(cs.getPropertyValue("--block-h"));
+    var g = parseFloat(cs.getPropertyValue("--gap"));
+    var bh = (m * h + (m - 1) * g + 9) + "px";
+    document.querySelectorAll(".band").forEach(function (x) { x.style.height = bh; });
+  }
+
+  function renderProgress() {
+    var p = $("progress");
+    p.innerHTML = "";
+    for (var k = 0; k < QUESTIONS.length; k++) {
+      var d = document.createElement("span");
+      d.className = "dot" + (results[k] === true ? " ok" : results[k] === false ? " miss" : k === i ? " now" : "");
+      p.appendChild(d);
+    }
+    $("counter").textContent = "Питання " + (i + 1) + " з " + QUESTIONS.length;
+  }
+
+  function show() {
+    var q = QUESTIONS[i];
+    stack(left, q[0]);
+    stack(right, q[1]);
+    drawBand(Math.min(q[0], q[1]));
+    tries = 0;
+    input.value = "";
+    input.className = "";
+    input.disabled = false;
+    msg.textContent = "";
+    msg.className = "msg";
+    checkBtn.hidden = false;
+    nextBtn.hidden = true;
+    renderProgress();
+    input.focus({ preventScroll: true });
+  }
+
+  function finish(correct) {
+    results[i] = correct;
+    if (correct) score++;
+    input.disabled = true;
+    checkBtn.hidden = true;
+    nextBtn.hidden = false;
+    nextBtn.textContent = i === QUESTIONS.length - 1 ? "Результат →" : "Далі →";
+    renderProgress();
+    nextBtn.focus({ preventScroll: true });
+  }
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (input.disabled) { next(); return; }
+    var q = QUESTIONS[i];
+    if (!input.value.trim()) { msg.className = "msg bad"; msg.textContent = "Напиши речення у поле."; return; }
+    var res = check(input.value, q[0], q[1]);
+    if (res.ok) {
+      input.className = "ok";
+      msg.className = "msg ok";
+      msg.textContent = tries === 0 ? "Правильно! Молодець!" : "Правильно!";
+      finish(tries === 0);
+      return;
+    }
+    tries++;
+    input.className = "bad";
+    msg.className = "msg bad";
+    if (tries >= 2) {
+      msg.textContent = "Правильна відповідь: " + expected(q[0], q[1]) + ".";
+      finish(false);
+      return;
+    }
+    msg.textContent = "Неправильно. Спробуй ще раз.";
+  });
+
+  function next() {
+    if (i < QUESTIONS.length - 1) { i++; show(); return; }
+    $("quiz").hidden = true;
+    $("final").hidden = false;
+    $("score").textContent = score + " / " + QUESTIONS.length;
+    $("scoreText").textContent = score === QUESTIONS.length ? "Усе правильно з першого разу!" :
+      score >= 7 ? "Дуже добре!" : "Спробуй ще раз, і буде краще.";
+    $("counter").textContent = "";
+  }
+  nextBtn.addEventListener("click", next);
+
+  $("again").addEventListener("click", function () {
+    i = 0; score = 0; results = [];
+    $("final").hidden = true;
+    $("quiz").hidden = false;
+    show();
+  });
+
+  window.addEventListener("resize", function () {
+    var q = QUESTIONS[i]; drawBand(Math.min(q[0], q[1]));
+  });
+
+  show();
+})();
+</script>
+</body>
+</html>
