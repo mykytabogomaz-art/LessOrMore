@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Скільки блоків?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Layout: one centred lesson column; two block towers sharing a "same level" band, sentence input underneath */
+:root {
+  --bg: #eef7f2;
+  --card: #ffffff;
+  --card-edge: #dfe8e4;
+  --ink: #23302c;
+  --muted: #6b7a75;
+  --block: #4a8ff2;
+  --block-top: #6aa6f7;
+  --block-shadow: #2f6fcf;
+  --band: rgba(110, 125, 140, 0.20);
+  --band-edge: rgba(110, 125, 140, 0.30);
+  --ok: #1f9a5c;
+  --ok-soft: #dff4e8;
+  --bad: #c9473a;
+  --bad-soft: #fbe5e1;
+  --focus: #4a8ff2;
+  --font-display: "Unbounded", "Nunito", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --block-h: 24px;
+  --gap: 6px;
+  --pad: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131a18; --card: #1d2624; --card-edge: #2c3835; --ink: #e8efec; --muted: #9aaaa5;
+    --block: #4f8fe8; --block-top: #6ba3ee; --block-shadow: #2d63b3;
+    --band: rgba(170, 185, 200, 0.16); --band-edge: rgba(170, 185, 200, 0.26);
+    --ok: #4cc98a; --ok-soft: #173a29; --bad: #ef7b6e; --bad-soft: #3d2220; --focus: #6ba3ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131a18; --card: #1d2624; --card-edge: #2c3835; --ink: #e8efec; --muted: #9aaaa5;
+  --block: #4f8fe8; --block-top: #6ba3ee; --block-shadow: #2d63b3;
+  --band: rgba(170, 185, 200, 0.16); --band-edge: rgba(170, 185, 200, 0.26);
+  --ok: #4cc98a; --ok-soft: #173a29; --bad: #ef7b6e; --bad-soft: #3d2220; --focus: #6ba3ee;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.45rem; margin: 0; text-wrap: balance; }
+.task { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.45; }
+
+.progress { display: flex; gap: 6px; width: 100%; }
+.dot { flex: 1; min-width: 0; height: 8px; border-radius: 4px; background: var(--card-edge); }
+.dot.now { background: var(--block); }
+.dot.ok { background: var(--ok); }
+.dot.miss { background: var(--bad); }
+.counter { font-weight: 800; color: var(--muted); font-size: .9rem; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+
+.stage { --col-gap: 28px; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card {
+  background: var(--card);
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  box-shadow: 0 1px 0 var(--card-edge), 0 6px 18px rgba(30, 60, 50, 0.06);
+  height: calc(8 * var(--block-h) + 7 * var(--gap) + 2 * var(--pad) + 4px);
+  padding: var(--pad);
+  display: flex; flex-direction: column-reverse; gap: var(--gap);
+}
+.block {
+  height: var(--block-h);
+  border-radius: 7px;
+  background: linear-gradient(var(--block-top), var(--block));
+  box-shadow: 0 3px 0 var(--block-shadow);
+  margin-inline: 6px;
+  flex: none;
+  animation: drop .28s ease-out both;
+}
+@keyframes drop { from { transform: translateY(-14px); opacity: .3; } to { transform: none; opacity: 1; } }
+.band {
+  position: absolute; left: 0; right: 0;
+  bottom: calc(var(--pad) - 7px);
+  background: var(--band);
+  border-top: 1px solid var(--band-edge);
+  border-bottom: 1px solid var(--band-edge);
+  border-radius: 0;
+  pointer-events: none;
+  transition: height .25s ease;
+}
+.band.bridge {
+  left: calc(50% - var(--col-gap) / 2); right: auto;
+  width: var(--col-gap);
+  bottom: calc(var(--side-label-h) + var(--pad) - 7px);
+}
+.side { text-align: center; font-weight: 800; color: var(--muted); font-size: .95rem; height: 22px; }
+
+.answer { display: flex; flex-direction: column; gap: 10px; }
+label.lbl { font-weight: 800; font-size: .95rem; }
+input#ans {
+  width: 100%;
+  font: 700 1.1rem var(--font-body);
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--card-edge);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+input#ans::placeholder { color: var(--muted); font-weight: 600; opacity: .8; }
+input#ans:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+input#ans.ok { border-color: var(--ok); background: var(--ok-soft); }
+input#ans.bad { border-color: var(--bad); background: var(--bad-soft); }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+button {
+  font: 800 1rem var(--font-body);
+  border-radius: 14px; padding: 12px 20px; cursor: pointer;
+  border: 2px solid var(--card-edge); background: var(--card); color: var(--ink);
+}
+button.primary { background: var(--block); border-color: var(--block); color: #fff; box-shadow: 0 3px 0 var(--block-shadow); }
+button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:active { transform: translateY(1px); }
+
+.msg { min-height: 1.4em; margin: 0; font-weight: 700; line-height: 1.4; }
+.msg.ok { color: var(--ok); }
+.msg.bad { color: var(--bad); }
+
+.final { background: var(--card); border-radius: 22px; padding: 28px 22px; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.final .big { font-family: var(--font-display); font-size: 2.6rem; font-variant-numeric: tabular-nums; }
+
+/* Будування веж: кнопки під кожною вежею */
+.build { display: flex; justify-content: center; gap: 10px; }
+.build button { width: 52px; height: 46px; padding: 0; font-size: 1.5rem; line-height: 1; }
+.build button:disabled { opacity: .35; cursor: not-allowed; }
+.build button:disabled:active { transform: none; }
+.build .plus { background: var(--block); border-color: var(--block); color: #fff; box-shadow: 0 3px 0 var(--block-shadow); }
+.question { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; line-height: 1.5; text-wrap: pretty; }
+.question b { color: var(--block); }
+.question .ask { display: block; margin-top: 4px; }
+.reset { display: block; margin: 0 auto; font-size: .9rem; padding: 8px 16px; color: var(--muted); }
+.reset:disabled { opacity: .4; cursor: not-allowed; }
+
+@media (max-width: 420px) {
+  :root { --block-h: 21px; --gap: 5px; --pad: 14px; }
+  .stage { --col-gap: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .block { animation: none; }
+  .band { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="counter" id="counter">Питання 1 з 10</span>
+    <h1>Скільки блоків?</h1>
+    <p class="task">Прочитай задачу, побудуй блоки і напиши відповідь.</p>
+    <div class="progress" id="progress" aria-hidden="true"></div>
+  </header>
+
+  <section id="quiz" style="display:flex;flex-direction:column;gap:18px;">
+    <p class="question" id="question"></p>
+
+    <div class="stage" id="stage" style="--side-label-h: 88px;">
+      <div class="col">
+        <div class="card" id="left"></div>
+        <div class="side">Зліва</div>
+        <div class="build">
+          <button type="button" class="minus" data-side="left" aria-label="Прибрати блок зліва">−</button>
+          <button type="button" class="plus" data-side="left" aria-label="Додати блок зліва">+</button>
+        </div>
+      </div>
+      <div class="col">
+        <div class="card" id="right"></div>
+        <div class="side">Справа</div>
+        <div class="build">
+          <button type="button" class="minus" data-side="right" aria-label="Прибрати блок справа">−</button>
+          <button type="button" class="plus" data-side="right" aria-label="Додати блок справа">+</button>
+        </div>
+      </div>
+      <div class="band bridge"></div>
+    </div>
+    <button type="button" class="reset" id="reset">↺ Почати будувати спочатку</button>
+
+    <form class="answer" id="form" autocomplete="off">
+      <label class="lbl" for="ans">Відповідь</label>
+      <input id="ans" type="text" spellcheck="false" autocapitalize="sentences">
+      <div class="row">
+        <button type="submit" class="primary" id="check">Перевірити</button>
+        <button type="button" id="next" hidden>Далі →</button>
+      </div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="final" id="final" hidden>
+    <div class="counter">Готово!</div>
+    <div class="big" id="score">0 / 10</div>
+    <p class="task" id="scoreText"></p>
+    <button class="primary" id="again" type="button">Ще раз</button>
+  </section>
+</div>
+
+<script>
+(function () {
+  // known — де відомо, скільки блоків; n — скільки там блоків;
+  // dir — справа/зліва більше чи менше; d — на скільки. Питаємо про іншу сторону.
+  var QUESTIONS = [
+    { known: "left",  n: 3, dir: "more", d: 2 },
+    { known: "left",  n: 6, dir: "less", d: 2 },
+    { known: "right", n: 4, dir: "more", d: 3 },
+    { known: "right", n: 5, dir: "less", d: 1 },
+    { known: "left",  n: 2, dir: "more", d: 4 },
+    { known: "right", n: 7, dir: "less", d: 4 },
+    { known: "left",  n: 5, dir: "less", d: 3 },
+    { known: "right", n: 1, dir: "more", d: 5 },
+    { known: "left",  n: 4, dir: "more", d: 1 },
+    { known: "right", n: 8, dir: "less", d: 2 }
+  ];
+  var MAX = 8; // стільки блоків вміщає вежа
+  var SIDE = { left: "зліва", right: "справа" };
+  var WORDS = {
+    "один": 1, "одна": 1, "два": 2, "дві": 2, "три": 3, "чотири": 4, "п'ять": 5,
+    "шість": 6, "сім": 7, "вісім": 8, "дев'ять": 9, "десять": 10
+  };
+
+  var i = 0, tries = 0, score = 0, results = [], counts = { left: 0, right: 0 }, done = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var cards = { left: $("left"), right: $("right") };
+  var input = $("ans"), msg = $("msg"), checkBtn = $("check"), nextBtn = $("next");
+
+  function other(side) { return side === "left" ? "right" : "left"; }
+  function answerOf(q) { return q.dir === "more" ? q.n + q.d : q.n - q.d; }
+  function blocks(n) {
+    var d = n % 10, dd = n % 100;
+    if (d === 1 && dd !== 11) return "блок";
+    if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return "блоки";
+    return "блоків";
+  }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  // «Зліва 3 блоки, а справа на 2 більше. Скільки блоків справа?»
+  function questionHtml(q) {
+    var ask = SIDE[other(q.known)];
+    return cap(SIDE[q.known]) + " <b>" + q.n + "</b> " + blocks(q.n) + ", а " + ask +
+      " на <b>" + q.d + "</b> " + (q.dir === "more" ? "більше" : "менше") + "." +
+      '<span class="ask">Скільки блоків ' + ask + "?</span>";
+  }
+  function expected(q) {
+    var a = answerOf(q);
+    return cap(SIDE[other(q.known)]) + " " + a + " " + blocks(a) + ".";
+  }
+
+  function normalize(s) {
+    return s.toLowerCase()
+      .replace(/[’ʼ`´]/g, "'")
+      .replace(/i/g, "і")          // латинська i → українська і
+      .replace(/[.,!?;:—–-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  // Перевіряємо лише сторону і число: «Справа 5 блоків.», «справа 5» — усе підходить
+  function check(text, q) {
+    var words = normalize(text).split(" ");
+    var a = answerOf(q), side = SIDE[other(q.known)];
+    if (words.indexOf(side) < 0) return words.indexOf(SIDE[q.known]) >= 0 ? "wrongSide" : "side";
+    var nums = words.map(function (w) { return /^\d+$/.test(w) ? +w : WORDS[w]; })
+      .filter(function (v) { return v !== undefined; });
+    if (nums.length !== 1 || nums[0] !== a) return "number";
+    return "";
+  }
+  var HINTS = {
+    side: "Напиши, де ці блоки: зліва чи справа. Наприклад: «Зліва 4 блоки.»",
+    wrongSide: "Питають про іншу сторону. Прочитай питання ще раз.",
+    number: "Перевір число. Побудуй блоки і порахуй."
+  };
+
+  /* ---------- Вежі з блоків ---------- */
+  function render(side, animateLast) {
+    var el = cards[side];
+    el.querySelectorAll(".block").forEach(function (b) { b.remove(); });
+    var band = el.querySelector(".band");
+    for (var k = 0; k < counts[side]; k++) {
+      var b = document.createElement("div");
+      b.className = "block";
+      if (!(animateLast && k === counts[side] - 1)) b.style.animation = "none";
+      el.insertBefore(b, band);
+    }
+  }
+  function setupCards() {
+    ["left", "right"].forEach(function (side) {
+      cards[side].innerHTML = "";
+      var band = document.createElement("div");
+      band.className = "band";
+      cards[side].appendChild(band);
+    });
+  }
+  function updateButtons() {
+    document.querySelectorAll(".build button").forEach(function (b) {
+      var side = b.dataset.side;
+      b.disabled = done || (b.classList.contains("plus") ? counts[side] >= MAX : counts[side] <= 0);
+    });
+    $("reset").disabled = done;
+  }
+
+  // Смуга «на одному рівні» — висота меншої вежі
+  function drawBand() {
+    var m = Math.min(counts.left, counts.right);
+    var cs = getComputedStyle(document.documentElement);
+    var h = parseFloat(cs.getPropertyValue("--block-h"));
+    var g = parseFloat(cs.getPropertyValue("--gap"));
+    var stage = $("stage");
+    stage.style.setProperty("--side-label-h",
+      (stage.getBoundingClientRect().bottom - cards.left.getBoundingClientRect().bottom) + "px");
+    var bh = m > 0 ? (m * h + (m - 1) * g + 9) + "px" : "0px";
+    document.querySelectorAll(".band").forEach(function (x) {
+      x.style.height = bh;
+      x.style.visibility = m > 0 ? "visible" : "hidden";
+    });
+  }
+
+  function change(side, delta) {
+    if (done) return;
+    var v = counts[side] + delta;
+    if (v < 0 || v > MAX) return;
+    counts[side] = v;
+    render(side, delta > 0);
+    drawBand();
+    updateButtons();
+  }
+  document.querySelectorAll(".build button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      change(b.dataset.side, b.classList.contains("plus") ? 1 : -1);
+    });
+  });
+  $("reset").addEventListener("click", function () {
+    if (done) return;
+    counts = { left: 0, right: 0 };
+    render("left"); render("right");
+    drawBand(); updateButtons();
+  });
+
+  function renderProgress() {
+    var p = $("progress");
+    p.innerHTML = "";
+    for (var k = 0; k < QUESTIONS.length; k++) {
+      var d = document.createElement("span");
+      d.className = "dot" + (results[k] === true ? " ok" : results[k] === false ? " miss" : k === i ? " now" : "");
+      p.appendChild(d);
+    }
+    $("counter").textContent = "Питання " + (i + 1) + " з " + QUESTIONS.length;
+  }
+
+  function show() {
+    var q = QUESTIONS[i];
+    $("question").innerHTML = questionHtml(q);
+    done = false;
+    counts = { left: 0, right: 0 };
+    setupCards();
+    drawBand();
+    updateButtons();
+    tries = 0;
+    input.value = "";
+    input.className = "";
+    input.disabled = false;
+    msg.textContent = "";
+    msg.className = "msg";
+    checkBtn.hidden = false;
+    nextBtn.hidden = true;
+    renderProgress();
+  }
+
+  // Після відповіді вежі показують правильну кількість блоків
+  function finish(correct) {
+    var q = QUESTIONS[i];
+    results[i] = correct;
+    if (correct) score++;
+    done = true;
+    counts[q.known] = q.n;
+    counts[other(q.known)] = answerOf(q);
+    render("left"); render("right");
+    drawBand();
+    updateButtons();
+    input.disabled = true;
+    checkBtn.hidden = true;
+    nextBtn.hidden = false;
+    nextBtn.textContent = i === QUESTIONS.length - 1 ? "Результат →" : "Далі →";
+    renderProgress();
+    nextBtn.focus({ preventScroll: true });
+  }
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (input.disabled) { next(); return; }
+    var q = QUESTIONS[i];
+    if (!input.value.trim()) { msg.className = "msg bad"; msg.textContent = "Напиши відповідь у поле."; return; }
+    var why = check(input.value, q);
+    if (!why) {
+      input.className = "ok";
+      msg.className = "msg ok";
+      msg.textContent = tries === 0 ? "Правильно! Молодець!" : "Правильно!";
+      finish(tries === 0);
+      return;
+    }
+    tries++;
+    input.className = "bad";
+    msg.className = "msg bad";
+    // Спроб скільки завгодно; у рахунок іде лише правильна відповідь з першого разу
+    msg.textContent = HINTS[why];
+  });
+  input.addEventListener("input", function () { if (!input.disabled) input.className = ""; });
+
+  function next() {
+    if (i < QUESTIONS.length - 1) { i++; show(); window.scrollTo({ top: 0 }); return; }
+    $("quiz").hidden = true;
+    $("final").hidden = false;
+    $("score").textContent = score + " / " + QUESTIONS.length;
+    $("scoreText").textContent = score === QUESTIONS.length ? "Усе правильно з першого разу!" :
+      score >= 7 ? "Дуже добре!" : "Спробуй ще раз, і буде краще.";
+    $("counter").textContent = "";
+  }
+  nextBtn.addEventListener("click", next);
+
+  $("again").addEventListener("click", function () {
+    i = 0; score = 0; results = [];
+    $("final").hidden = true;
+    $("quiz").hidden = false;
+    show();
+  });
+
+  window.addEventListener("resize", drawBand);
+
+  show();
+})();
+</script>
+
+</body>
+</html>
