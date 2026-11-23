@@ -158,9 +158,41 @@ button:active { transform: translateY(1px); }
 .reset:disabled { opacity: .4; cursor: not-allowed; }
 
 @media (max-width: 420px) {
-  :root { --block-h: 21px; --gap: 5px; --pad: 14px; }
   .stage { --col-gap: 18px; }
 }
+
+/* Компактний вигляд: усе завдання займає приблизно 80% висоти екрана.
+   Висота веж залежить від висоти екрана, блоки підлаштовуються під неї. */
+:root {
+  --gap: 4px;
+  --pad: 10px;
+  --card-h: clamp(150px, calc(80vh - 266px), 480px);
+  --block-h: calc((var(--card-h) - 2 * var(--pad) - 4px - 7 * var(--gap)) / 8);
+}
+@supports (height: 1dvh) {
+  :root { --card-h: clamp(150px, calc(80dvh - 266px), 480px); }
+}
+body { padding-block: 12px; }
+.wrap { gap: 10px; }
+header { gap: 6px; }
+.head-row { display: flex; align-items: center; gap: 10px; }
+.head-row h1 { font-size: 1.15rem; }
+.head-row .counter { margin-left: auto; }
+.reset { margin: 0; width: 38px; height: 38px; padding: 0; border-radius: 50%; font-size: 1.15rem; }
+#quiz { display: flex; flex-direction: column; gap: 10px; }
+.question { font-size: 1.02rem; line-height: 1.4; }
+.question .ask { margin-top: 2px; }
+.card { height: var(--card-h); border-radius: 18px; }
+.col { gap: 6px; }
+.build { align-items: center; gap: 6px; }
+.build .side { flex: 1; height: auto; }
+.build button { width: 44px; height: 40px; font-size: 1.35rem; }
+.answer { gap: 6px; }
+.ans-row { display: flex; align-items: center; gap: 8px; }
+.ans-row .lbl { flex: none; }
+input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
+.ans-row button { flex: none; padding: 11px 16px; }
+.msg { min-height: 1.4em; font-size: .95rem; }
 @media (prefers-reduced-motion: reduce) {
   .block { animation: none; }
   .band { transition: none; }
@@ -171,42 +203,43 @@ button:active { transform: translateY(1px); }
 
 <div class="wrap">
   <header>
-    <span class="counter" id="counter">Питання 1 з 10</span>
-    <h1>Скільки блоків?</h1>
-    <p class="task">Прочитай задачу, побудуй блоки і напиши відповідь.</p>
+    <div class="head-row">
+      <h1>Скільки блоків?</h1>
+      <span class="counter" id="counter">Питання 1 з 10</span>
+      <button type="button" class="reset" id="reset" aria-label="Почати будувати спочатку" title="Почати будувати спочатку">↺</button>
+    </div>
     <div class="progress" id="progress" aria-hidden="true"></div>
   </header>
 
-  <section id="quiz" style="display:flex;flex-direction:column;gap:18px;">
+  <section id="quiz">
     <p class="question" id="question"></p>
 
-    <div class="stage" id="stage" style="--side-label-h: 88px;">
+    <div class="stage" id="stage" style="--side-label-h: 50px;">
       <div class="col">
         <div class="card" id="left"></div>
-        <div class="side">Зліва</div>
         <div class="build">
           <button type="button" class="minus" data-side="left" aria-label="Прибрати блок зліва">−</button>
+          <div class="side">Зліва</div>
           <button type="button" class="plus" data-side="left" aria-label="Додати блок зліва">+</button>
         </div>
       </div>
       <div class="col">
         <div class="card" id="right"></div>
-        <div class="side">Справа</div>
         <div class="build">
           <button type="button" class="minus" data-side="right" aria-label="Прибрати блок справа">−</button>
+          <div class="side">Справа</div>
           <button type="button" class="plus" data-side="right" aria-label="Додати блок справа">+</button>
         </div>
       </div>
       <div class="band bridge"></div>
     </div>
-    <button type="button" class="reset" id="reset">↺ Почати будувати спочатку</button>
 
     <form class="answer" id="form" autocomplete="off">
-      <label class="lbl" for="ans">Відповідь</label>
-      <input id="ans" type="text" spellcheck="false" autocapitalize="sentences">
-      <div class="row">
+      <div class="ans-row">
+        <label class="lbl" for="ans">Відповідь:</label>
+        <input id="ans" type="text" spellcheck="false" autocapitalize="sentences">
         <button type="submit" class="primary" id="check">Перевірити</button>
-        <button type="button" id="next" hidden>Далі →</button>
+        <button type="button" class="primary" id="next" hidden>Далі →</button>
       </div>
       <p class="msg" id="msg" role="status" aria-live="polite"></p>
     </form>
@@ -326,9 +359,10 @@ button:active { transform: translateY(1px); }
   // Смуга «на одному рівні» — висота меншої вежі
   function drawBand() {
     var m = Math.min(counts.left, counts.right);
-    var cs = getComputedStyle(document.documentElement);
-    var h = parseFloat(cs.getPropertyValue("--block-h"));
-    var g = parseFloat(cs.getPropertyValue("--gap"));
+    // розмір блока рахуємо з висоти вежі (вона залежить від висоти екрана)
+    var cs = getComputedStyle(cards.left);
+    var pad = parseFloat(cs.paddingTop), g = parseFloat(cs.rowGap) || 0;
+    var h = (cards.left.clientHeight - 2 * pad - 4 - 7 * g) / 8;
     var stage = $("stage");
     stage.style.setProperty("--side-label-h",
       (stage.getBoundingClientRect().bottom - cards.left.getBoundingClientRect().bottom) + "px");
