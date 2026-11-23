@@ -73,7 +73,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.45rem; mar
 .dot.miss { background: var(--bad); }
 .counter { font-weight: 800; color: var(--muted); font-size: .9rem; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 
-.stage { --col-gap: 28px; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); }
+.stage { --col-gap: 56px; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); }
 .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .card {
   background: var(--card);
@@ -158,7 +158,7 @@ button:active { transform: translateY(1px); }
 .reset:disabled { opacity: .4; cursor: not-allowed; }
 
 @media (max-width: 420px) {
-  .stage { --col-gap: 18px; }
+  .stage { --col-gap: 36px; }
 }
 
 /* Компактний вигляд: усе завдання займає приблизно 80% висоти екрана.
@@ -166,11 +166,11 @@ button:active { transform: translateY(1px); }
 :root {
   --gap: 4px;
   --pad: 10px;
-  --card-h: clamp(150px, calc(80vh - 266px), 480px);
+  --card-h: clamp(150px, calc(80vh - 306px), 480px);
   --block-h: calc((var(--card-h) - 2 * var(--pad) - 4px - 7 * var(--gap)) / 8);
 }
 @supports (height: 1dvh) {
-  :root { --card-h: clamp(150px, calc(80dvh - 266px), 480px); }
+  :root { --card-h: clamp(150px, calc(80dvh - 306px), 480px); }
 }
 body { padding-block: 12px; }
 .wrap { gap: 10px; }
@@ -187,7 +187,7 @@ header { gap: 6px; }
 .build { align-items: center; gap: 6px; }
 .build .side { flex: 1; height: auto; }
 .build button { width: 44px; height: 40px; font-size: 1.35rem; }
-.answer { gap: 6px; }
+.answer { gap: 6px; margin-top: 40px; } /* велика відстань між кнопками веж і відповіддю */
 .ans-row { display: flex; align-items: center; gap: 8px; }
 .ans-row .lbl { flex: none; }
 input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
