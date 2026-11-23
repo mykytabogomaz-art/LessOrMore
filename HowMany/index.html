@@ -379,14 +379,14 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     });
   }
 
-  // Підсвічує частину задачі: 1 — поки не побудована відома вежа,
-  // 2 — поки не побудована друга вежа, 3 — питання, коли все побудовано
+  // Підсвічує частину задачі: 1 — поки не побудована відома вежа, далі 2;
+  // питання (3) — коли курсор у полі «Відповідь»
   function highlightStep() {
     var q = QUESTIONS[i], part = 0;
     if (!done) {
-      if (counts[q.known] !== q.n) part = 1;
-      else if (counts[other(q.known)] !== answerOf(q)) part = 2;
-      else part = 3;
+      if (document.activeElement === input) part = 3;
+      else if (counts[q.known] !== q.n) part = 1;
+      else part = 2;
     }
     document.querySelectorAll("#question .qpart").forEach(function (p) {
       p.classList.toggle("hl", +p.dataset.part === part);
@@ -484,8 +484,11 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     msg.className = "msg bad";
     // Спроб скільки завгодно; у рахунок іде лише правильна відповідь з першого разу
     msg.textContent = HINTS[why];
+    input.focus({ preventScroll: true }); // одразу можна виправляти
   });
   input.addEventListener("input", function () { if (!input.disabled) input.className = ""; });
+  input.addEventListener("focus", highlightStep);
+  input.addEventListener("blur", highlightStep);
 
   function next() {
     if (i < QUESTIONS.length - 1) { i++; show(); window.scrollTo({ top: 0 }); return; }
