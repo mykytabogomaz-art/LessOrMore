@@ -182,6 +182,12 @@ header { gap: 6px; }
 #quiz { display: flex; flex-direction: column; gap: 10px; }
 .question { font-size: 1.02rem; line-height: 1.4; }
 .question .ask { margin-top: 2px; }
+/* Підсвічування частини задачі, яку зараз виконують */
+.qpart { border-radius: 6px; padding: 1px 3px; margin: 0 -3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background .25s, box-shadow .25s; }
+.qpart.hl { background: #ffeaa6; box-shadow: inset 0 -3px 0 #f2b400; }
+.question .ask.qpart { display: table; margin-left: -3px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .qpart.hl { background: #4a3d12; box-shadow: inset 0 -3px 0 #c99500; } }
+:root[data-theme="dark"] .qpart.hl { background: #4a3d12; box-shadow: inset 0 -3px 0 #c99500; }
 .card { height: var(--card-h); border-radius: 18px; }
 .col { gap: 6px; }
 .build { align-items: center; gap: 6px; }
@@ -294,9 +300,9 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
   // «Зліва 3 блоки, а справа на 2 більше. Скільки блоків справа?»
   function questionHtml(q) {
     var ask = SIDE[other(q.known)];
-    return cap(SIDE[q.known]) + " <b>" + q.n + "</b> " + blocks(q.n) + ", а " + ask +
-      " на <b>" + q.d + "</b> " + (q.dir === "more" ? "більше" : "менше") + "." +
-      '<span class="ask">Скільки блоків ' + ask + "?</span>";
+    return '<span class="qpart" data-part="1">' + cap(SIDE[q.known]) + " <b>" + q.n + "</b> " + blocks(q.n) + ",</span> " +
+      '<span class="qpart" data-part="2">а ' + ask + " на <b>" + q.d + "</b> " + (q.dir === "more" ? "більше" : "менше") + ".</span>" +
+      '<span class="ask qpart" data-part="3">Скільки блоків ' + ask + "?</span>";
   }
   function expected(q) {
     var a = answerOf(q);
@@ -373,6 +379,20 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     });
   }
 
+  // Підсвічує частину задачі: 1 — поки не побудована відома вежа,
+  // 2 — поки не побудована друга вежа, 3 — питання, коли все побудовано
+  function highlightStep() {
+    var q = QUESTIONS[i], part = 0;
+    if (!done) {
+      if (counts[q.known] !== q.n) part = 1;
+      else if (counts[other(q.known)] !== answerOf(q)) part = 2;
+      else part = 3;
+    }
+    document.querySelectorAll("#question .qpart").forEach(function (p) {
+      p.classList.toggle("hl", +p.dataset.part === part);
+    });
+  }
+
   function change(side, delta) {
     if (done) return;
     var v = counts[side] + delta;
@@ -381,6 +401,7 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     render(side, delta > 0);
     drawBand();
     updateButtons();
+    highlightStep();
   }
   document.querySelectorAll(".build button").forEach(function (b) {
     b.addEventListener("click", function () {
@@ -391,7 +412,7 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     if (done) return;
     counts = { left: 0, right: 0 };
     render("left"); render("right");
-    drawBand(); updateButtons();
+    drawBand(); updateButtons(); highlightStep();
   });
 
   function renderProgress() {
@@ -413,6 +434,7 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     setupCards();
     drawBand();
     updateButtons();
+    highlightStep();
     tries = 0;
     input.value = "";
     input.className = "";
@@ -435,6 +457,7 @@ input#ans { flex: 1; min-width: 0; padding: 10px 12px; font-size: 1.05rem; }
     render("left"); render("right");
     drawBand();
     updateButtons();
+    highlightStep();
     input.disabled = true;
     checkBtn.hidden = true;
     nextBtn.hidden = false;
