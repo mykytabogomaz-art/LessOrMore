@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Порівняй блоки: 5 питань</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Layout: one centred lesson column; two block towers sharing a "same level" band, sentence input underneath */
+:root {
+  --bg: #eef7f2;
+  --card: #ffffff;
+  --card-edge: #dfe8e4;
+  --ink: #23302c;
+  --muted: #6b7a75;
+  --block: #4a8ff2;
+  --block-top: #6aa6f7;
+  --block-shadow: #2f6fcf;
+  --band: rgba(110, 125, 140, 0.20);
+  --band-edge: rgba(110, 125, 140, 0.30);
+  --ok: #1f9a5c;
+  --ok-soft: #dff4e8;
+  --bad: #c9473a;
+  --bad-soft: #fbe5e1;
+  --focus: #4a8ff2;
+  --font-display: "Unbounded", "Nunito", system-ui, sans-serif;
+  --font-body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --block-h: 24px;
+  --gap: 6px;
+  --pad: 18px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131a18; --card: #1d2624; --card-edge: #2c3835; --ink: #e8efec; --muted: #9aaaa5;
+    --block: #4f8fe8; --block-top: #6ba3ee; --block-shadow: #2d63b3;
+    --band: rgba(170, 185, 200, 0.16); --band-edge: rgba(170, 185, 200, 0.26);
+    --ok: #4cc98a; --ok-soft: #173a29; --bad: #ef7b6e; --bad-soft: #3d2220; --focus: #6ba3ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131a18; --card: #1d2624; --card-edge: #2c3835; --ink: #e8efec; --muted: #9aaaa5;
+  --block: #4f8fe8; --block-top: #6ba3ee; --block-shadow: #2d63b3;
+  --band: rgba(170, 185, 200, 0.16); --band-edge: rgba(170, 185, 200, 0.26);
+  --ok: #4cc98a; --ok-soft: #173a29; --bad: #ef7b6e; --bad-soft: #3d2220; --focus: #6ba3ee;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 520px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.45rem; margin: 0; text-wrap: balance; }
+.task { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.45; }
+
+.progress { display: flex; gap: 6px; width: 100%; }
+.dot { flex: 1; min-width: 0; height: 8px; border-radius: 4px; background: var(--card-edge); }
+.dot.now { background: var(--block); }
+.dot.ok { background: var(--ok); }
+.dot.miss { background: var(--bad); }
+.counter { font-weight: 800; color: var(--muted); font-size: .9rem; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+
+.stage { --col-gap: 56px; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); }
+.col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card {
+  background: var(--card);
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  box-shadow: 0 1px 0 var(--card-edge), 0 6px 18px rgba(30, 60, 50, 0.06);
+  height: calc(8 * var(--block-h) + 7 * var(--gap) + 2 * var(--pad) + 4px);
+  padding: var(--pad);
+  display: flex; flex-direction: column-reverse; gap: var(--gap);
+}
+.block {
+  height: var(--block-h);
+  border-radius: 7px;
+  background: linear-gradient(var(--block-top), var(--block));
+  box-shadow: 0 3px 0 var(--block-shadow);
+  margin-inline: 6px;
+  flex: none;
+  animation: drop .28s ease-out both;
+}
+@keyframes drop { from { transform: translateY(-14px); opacity: .3; } to { transform: none; opacity: 1; } }
+.band {
+  position: absolute; left: 0; right: 0;
+  bottom: calc(var(--pad) - 7px);
+  background: var(--band);
+  border-top: 1px solid var(--band-edge);
+  border-bottom: 1px solid var(--band-edge);
+  border-radius: 0;
+  pointer-events: none;
+  transition: height .25s ease;
+}
+.band.bridge {
+  left: calc(50% - var(--col-gap) / 2); right: auto;
+  width: var(--col-gap);
+  bottom: calc(var(--side-label-h) + var(--pad) - 7px);
+}
+.side { text-align: center; font-weight: 800; color: var(--muted); font-size: .95rem; height: 22px; }
+
+.answer { display: flex; flex-direction: column; gap: 10px; }
+label.lbl { font-weight: 800; font-size: .95rem; }
+.answer input {
+  width: 100%;
+  font: 700 1.1rem var(--font-body);
+  color: var(--ink);
+  background: var(--card);
+  border: 2px solid var(--card-edge);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+.answer input::placeholder { color: var(--muted); font-weight: 600; opacity: .8; }
+.answer input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.answer input.ok { border-color: var(--ok); background: var(--ok-soft); }
+.answer input.bad { border-color: var(--bad); background: var(--bad-soft); }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+button {
+  font: 800 1rem var(--font-body);
+  border-radius: 14px; padding: 12px 20px; cursor: pointer;
+  border: 2px solid var(--card-edge); background: var(--card); color: var(--ink);
+}
+button.primary { background: var(--block); border-color: var(--block); color: #fff; box-shadow: 0 3px 0 var(--block-shadow); }
+button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+button:active { transform: translateY(1px); }
+
+.msg { min-height: 1.4em; margin: 0; font-weight: 700; line-height: 1.4; }
+.msg.ok { color: var(--ok); }
+.msg.bad { color: var(--bad); }
+
+.final { background: var(--card); border-radius: 22px; padding: 28px 22px; text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.final .big { font-family: var(--font-display); font-size: 2.6rem; font-variant-numeric: tabular-nums; }
+
+/* Будування веж: кнопки під кожною вежею */
+.build { display: flex; justify-content: center; gap: 10px; }
+.build button { width: 52px; height: 46px; padding: 0; font-size: 1.5rem; line-height: 1; }
+.build button:disabled { opacity: .35; cursor: not-allowed; }
+.build button:disabled:active { transform: none; }
+.build .plus { background: var(--block); border-color: var(--block); color: #fff; box-shadow: 0 3px 0 var(--block-shadow); }
+.question { margin: 0; font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; line-height: 1.5; text-wrap: pretty; }
+.question b { color: var(--block); }
+.question .ask { display: block; margin-top: 4px; }
+.reset { display: block; margin: 0 auto; font-size: .9rem; padding: 8px 16px; color: var(--muted); }
+.reset:disabled { opacity: .4; cursor: not-allowed; }
+
+@media (max-width: 420px) {
+  .stage { --col-gap: 36px; }
+}
+
+/* Компактний вигляд: усе завдання займає приблизно 80% висоти екрана.
+   Висота веж залежить від висоти екрана, блоки підлаштовуються під неї. */
+:root {
+  --gap: 4px;
+  --pad: 10px;
+  --card-h: clamp(150px, calc(80vh - 408px), 420px);
+  --block-h: calc((var(--card-h) - 2 * var(--pad) - 4px - 7 * var(--gap)) / 8);
+}
+@supports (height: 1dvh) {
+  :root { --card-h: clamp(150px, calc(80dvh - 408px), 420px); }
+}
+body { padding-block: 12px; }
+.wrap { gap: 10px; }
+header { gap: 6px; }
+.head-row { display: flex; align-items: center; gap: 10px; }
+.head-row h1 { font-size: 1.15rem; }
+.head-row .counter { margin-left: auto; }
+.reset { margin: 0; width: 38px; height: 38px; padding: 0; border-radius: 50%; font-size: 1.15rem; }
+#quiz { display: flex; flex-direction: column; gap: 10px; }
+.question { font-size: 1.02rem; line-height: 1.4; }
+.question .ask { margin-top: 2px; }
+/* Підсвічування частини задачі, яку зараз виконують */
+.qpart { border-radius: 6px; padding: 1px 3px; margin: 0 -3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; transition: background .25s, box-shadow .25s; }
+.qpart.hl { background: #ffeaa6; box-shadow: inset 0 -3px 0 #f2b400; }
+.question .ask.qpart { display: table; margin-left: -3px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .qpart.hl { background: #4a3d12; box-shadow: inset 0 -3px 0 #c99500; } }
+:root[data-theme="dark"] .qpart.hl { background: #4a3d12; box-shadow: inset 0 -3px 0 #c99500; }
+.card { height: var(--card-h); border-radius: 18px; }
+.col { gap: 6px; }
+.build { align-items: center; gap: 6px; }
+.build .side { flex: 1; height: auto; }
+.build button { width: 44px; height: 40px; font-size: 1.35rem; }
+.answer { gap: 8px; margin-top: 6px; }
+.ans-row { display: flex; align-items: center; gap: 8px; }
+.ans-row .lbl { flex: none; }
+.qrows { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 6px 10px; align-items: center; }
+.qlabel { font-weight: 700; font-size: .95rem; line-height: 1.2; }
+.qrows input { width: 100%; min-width: 0; padding: 8px 10px; font-size: 1rem; }
+.ans-row { justify-content: flex-end; }
+.side { height: 22px; }
+.ans-row button { flex: none; padding: 11px 16px; }
+.msg { min-height: 1.4em; font-size: .95rem; }
+@media (prefers-reduced-motion: reduce) {
+  .block { animation: none; }
+  .band { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="head-row">
+      <h1>Порівняй блоки</h1>
+      <span class="counter" id="counter">Завдання 1 з 6</span>
+    </div>
+    <div class="progress" id="progress" aria-hidden="true"></div>
+  </header>
+
+  <section id="quiz">
+    <div class="stage" id="stage" style="--side-label-h: 32px;">
+      <div class="col">
+        <div class="card" id="left"></div>
+        <div class="side">Зліва</div>
+      </div>
+      <div class="col">
+        <div class="card" id="right"></div>
+        <div class="side">Справа</div>
+      </div>
+      <div class="band bridge"></div>
+    </div>
+
+    <form class="answer" id="form" autocomplete="off">
+      <div class="qrows" id="qrows"></div>
+      <div class="ans-row">
+        <button type="submit" class="primary" id="check">Перевірити</button>
+        <button type="button" class="primary" id="next" hidden>Далі →</button>
+      </div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section class="final" id="final" hidden>
+    <div class="counter">Готово!</div>
+    <div class="big" id="score">0 / 6</div>
+    <p class="task" id="scoreText"></p>
+    <button class="primary" id="again" type="button">Ще раз</button>
+  </section>
+</div>
+
+<script>
+(function () {
+  var ROUNDS = 6;   // скільки разів показуємо нові блоки
+  var MAX = 8;      // стільки блоків вміщає вежа
+  var WORDS = {
+    "один": 1, "одна": 1, "два": 2, "дві": 2, "три": 3, "чотири": 4, "п'ять": 5,
+    "шість": 6, "сім": 7, "вісім": 8, "дев'ять": 9, "десять": 10, "одинадцять": 11,
+    "дванадцять": 12, "тринадцять": 13, "чотирнадцять": 14, "п'ятнадцять": 15, "шістнадцять": 16
+  };
+
+  // Питання під блоками. kind: number — лише число; side — сторона і число
+  var QUESTIONS = [
+    { id: "left",  label: "Скільки блоків зліва?" },
+    { id: "right", label: "Скільки блоків справа?" },
+    { id: "more",  label: "Де більше і на скільки?" },
+    { id: "less",  label: "Де менше і на скільки?" },
+    { id: "total", label: "Скільки всього блоків?" }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var cards = { left: $("left"), right: $("right") };
+  var msg = $("msg"), checkBtn = $("check"), nextBtn = $("next");
+  var rounds = [], i = 0, tries = 0, score = 0, results = [], fields = {}, done = false;
+
+  // Різні пари чисел: зліва і справа не однаково, пари не повторюються
+  function makeRounds() {
+    var out = [], seen = {};
+    while (out.length < ROUNDS) {
+      var l = 1 + Math.floor(Math.random() * MAX);
+      var r = 1 + Math.floor(Math.random() * MAX);
+      if (l === r || seen[l + "-" + r]) continue;
+      seen[l + "-" + r] = true;
+      out.push({ left: l, right: r });
+    }
+    return out;
+  }
+
+  function normalize(s) {
+    return s.toLowerCase()
+      .replace(/[’ʼ`´]/g, "'")
+      .replace(/i/g, "і")
+      .replace(/[.,!?;:—–-]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function numbersIn(words) {
+    return words.map(function (w) { return /^\d+$/.test(w) ? +w : WORDS[w]; })
+      .filter(function (v) { return v !== undefined; });
+  }
+
+  // Повертає '' або назву помилки
+  function checkField(id, text, t) {
+    var words = normalize(text).split(" ");
+    var nums = numbersIn(words);
+    var big = t.left > t.right ? "зліва" : "справа";
+    var small = big === "зліва" ? "справа" : "зліва";
+    var diff = Math.abs(t.left - t.right);
+    if (id === "left" || id === "right" || id === "total") {
+      var want = id === "total" ? t.left + t.right : t[id];
+      return nums.length === 1 && nums[0] === want ? "" : "number";
+    }
+    var side = id === "more" ? big : small, wrong = id === "more" ? small : big;
+    var hasSide = words.indexOf(side) >= 0, hasWrong = words.indexOf(wrong) >= 0;
+    if (!hasSide && !hasWrong) return "side";
+    if (!hasSide || hasWrong) return "wrongSide";
+    if (nums.length !== 1 || nums[0] !== diff) return "diff";
+    return "";
+  }
+  var HINTS = {
+    left:  { number: "1) Порахуй блоки зліва." },
+    right: { number: "2) Порахуй блоки справа." },
+    more:  { side: "3) Напиши, де більше: зліва чи справа. Наприклад: «Зліва на 1 більше».",
+             wrongSide: "3) Подивись ще раз: де блоків більше?",
+             diff: "3) Перевір, на скільки більше." },
+    less:  { side: "4) Напиши, де менше: зліва чи справа. Наприклад: «Справа на 1 менше».",
+             wrongSide: "4) Подивись ще раз: де блоків менше?",
+             diff: "4) Перевір, на скільки менше." },
+    total: { number: "5) Порахуй, скільки блоків разом." }
+  };
+
+  /* ---------- Вежі з блоків ---------- */
+  function drawTowers(t) {
+    ["left", "right"].forEach(function (side) {
+      var el = cards[side];
+      el.innerHTML = "";
+      for (var k = 0; k < t[side]; k++) {
+        var b = document.createElement("div");
+        b.className = "block";
+        b.style.animationDelay = (k * 40) + "ms";
+        el.appendChild(b);
+      }
+      var band = document.createElement("div");
+      band.className = "band";
+      el.appendChild(band);
+    });
+    drawBand();
+  }
+
+  // Смуга «на одному рівні» — висота меншої вежі
+  function drawBand() {
+    var t = rounds[i];
+    if (!t) return;
+    var m = Math.min(t.left, t.right);
+    var cs = getComputedStyle(cards.left);
+    var pad = parseFloat(cs.paddingTop), g = parseFloat(cs.rowGap) || 0;
+    var h = (cards.left.clientHeight - 2 * pad - 4 - 7 * g) / 8;
+    var stage = $("stage");
+    stage.style.setProperty("--side-label-h",
+      (stage.getBoundingClientRect().bottom - cards.left.getBoundingClientRect().bottom) + "px");
+    var bh = (m * h + (m - 1) * g + 9) + "px";
+    document.querySelectorAll(".band").forEach(function (x) { x.style.height = bh; });
+  }
+
+  /* ---------- Питання ---------- */
+  function buildRows() {
+    var box = $("qrows");
+    box.innerHTML = "";
+    fields = {};
+    QUESTIONS.forEach(function (q, n) {
+      var lab = document.createElement("label");
+      lab.htmlFor = "q-" + q.id;
+      lab.className = "qlabel";
+      lab.textContent = (n + 1) + ") " + q.label;
+      var inp = document.createElement("input");
+      inp.type = "text";
+      inp.id = "q-" + q.id;
+      inp.spellcheck = false;
+      inp.setAttribute("autocapitalize", "sentences");
+      inp.addEventListener("input", function () { if (!done) inp.className = ""; });
+      inp.addEventListener("keydown", function (e) {
+        // Enter переводить до наступного поля, на останньому — перевіряє
+        if (e.key !== "Enter" || done) return;
+        var next = QUESTIONS[n + 1];
+        if (next) { e.preventDefault(); fields[next.id].focus(); }
+      });
+      box.appendChild(lab);
+      box.appendChild(inp);
+      fields[q.id] = inp;
+    });
+  }
+
+  function renderProgress() {
+    var p = $("progress");
+    p.innerHTML = "";
+    for (var k = 0; k < ROUNDS; k++) {
+      var d = document.createElement("span");
+      d.className = "dot" + (results[k] === true ? " ok" : results[k] === false ? " miss" : k === i ? " now" : "");
+      p.appendChild(d);
+    }
+    $("counter").textContent = "Завдання " + (i + 1) + " з " + ROUNDS;
+  }
+
+  function show() {
+    done = false;
+    tries = 0;
+    buildRows();
+    drawTowers(rounds[i]);
+    msg.textContent = "";
+    msg.className = "msg";
+    checkBtn.hidden = false;
+    nextBtn.hidden = true;
+    renderProgress();
+  }
+
+  $("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (done) { next(); return; }
+    var t = rounds[i];
+    var empty = QUESTIONS.filter(function (q) { return !fields[q.id].value.trim(); });
+    if (empty.length) {
+      msg.className = "msg bad";
+      msg.textContent = "Дай відповідь на всі 5 питань.";
+      fields[empty[0].id].focus();
+      return;
+    }
+    var firstBad = null, why = "";
+    QUESTIONS.forEach(function (q) {
+      var err = checkField(q.id, fields[q.id].value, t);
+      fields[q.id].className = err ? "bad" : "ok";
+      if (err && !firstBad) { firstBad = q; why = err; }
+    });
+    if (firstBad) {
+      // Спроб скільки завгодно; у рахунок іде лише правильна відповідь з першого разу
+      tries++;
+      msg.className = "msg bad";
+      msg.textContent = HINTS[firstBad.id][why];
+      fields[firstBad.id].focus({ preventScroll: true });
+      return;
+    }
+    done = true;
+    results[i] = tries === 0;
+    if (tries === 0) score++;
+    QUESTIONS.forEach(function (q) { fields[q.id].disabled = true; });
+    msg.className = "msg ok";
+    msg.textContent = tries === 0 ? "Усе правильно! Молодець!" : "Усе правильно!";
+    checkBtn.hidden = true;
+    nextBtn.hidden = false;
+    nextBtn.textContent = i === ROUNDS - 1 ? "Результат →" : "Далі →";
+    renderProgress();
+    nextBtn.focus({ preventScroll: true });
+  });
+
+  function next() {
+    if (i < ROUNDS - 1) { i++; show(); window.scrollTo({ top: 0 }); return; }
+    $("quiz").hidden = true;
+    $("final").hidden = false;
+    $("score").textContent = score + " / " + ROUNDS;
+    $("scoreText").textContent = score === ROUNDS ? "Усе правильно з першого разу!" :
+      score >= ROUNDS - 2 ? "Дуже добре!" : "Спробуй ще раз, і буде краще.";
+    $("counter").textContent = "";
+  }
+  nextBtn.addEventListener("click", next);
+
+  $("again").addEventListener("click", function () {
+    rounds = makeRounds();
+    i = 0; score = 0; results = [];
+    $("final").hidden = true;
+    $("quiz").hidden = false;
+    show();
+  });
+
+  window.addEventListener("resize", drawBand);
+
+  rounds = makeRounds();
+  show();
+})();
+</script>
+
+
+</body>
+</html>
